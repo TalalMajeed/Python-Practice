@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use } from "react";
 import ReactMarkdown from "react-markdown";
-import { FileText } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 interface ProblemPageProps {
@@ -11,6 +11,7 @@ interface ProblemPageProps {
 
 export default function ProblemPage({ params }: ProblemPageProps) {
     const { id } = use(params);
+    const router = useRouter();
     const [content, setContent] = useState<string>("");
     const [title, setTitle] = useState<string>("");
     const [summary, setSummary] = useState<string>("");
@@ -24,7 +25,12 @@ export default function ProblemPage({ params }: ProblemPageProps) {
             setError(false);
             try {
                 const response = await fetch(`/problems/${id}.txt`);
-                if (!response.ok) throw new Error("Problem not found");
+
+                // If the file doesn't exist or we got an HTML error page back
+                if (!response.ok || response.headers.get("Content-Type")?.includes("text/html")) {
+                    router.push("/");
+                    return;
+                }
 
                 const text = await response.text();
                 setContent(text);
@@ -105,11 +111,11 @@ export default function ProblemPage({ params }: ProblemPageProps) {
                             p: ({ node, ...props }) => <p className="leading-relaxed text-navy-800 mb-8 text-base lg:text-lg" {...props} />,
                             ul: ({ node, ...props }) => <ul className="list-none space-y-4 mb-8 text-navy-800" {...props} />,
                             li: ({ node, ...props }) => (
-                                <li className="flex gap-4 items-start before:content-['■'] before:text-navy-950 before:text-[10px] before:mt-1.5" {...props} />
+                                <li className="relative pl-8 mb-4 text-navy-800 before:content-['■'] before:text-navy-950 before:text-[10px] before:absolute before:left-0 before:top-2" {...props} />
                             ),
                             ol: ({ node, ...props }) => <ol className="list-decimal list-inside space-y-4 mb-8 text-navy-800 font-bold" {...props} />,
                             code: ({ node, ...props }) => (
-                                <code className="bg-navy-50 text-navy-950 px-2 py-0.5 border border-navy-100 font-mono text-sm break-all" {...props} />
+                                <code className="bg-navy-50 text-navy-950 px-1.5 py-0.5 border border-navy-100 font-mono text-sm whitespace-nowrap" {...props} />
                             ),
                             pre: ({ node, ...props }) => (
                                 <pre className="bg-navy-950 text-navy-50 border-0 p-6 lg:p-8 overflow-x-auto my-10 font-mono text-xs lg:text-sm leading-relaxed" {...props} />
